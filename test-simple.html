@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .file-input-container {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .file-input-container.file-selected {
+            border-color: #28a745;
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+        
+        .video-preview-container {
+            margin: 20px 0;
+        }
+        
+        video {
+            max-width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .progress-section {
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: #4a6fa5;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .processing-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .step {
+            text-align: center;
+            flex: 1;
+            padding: 10px;
+            border-bottom: 3px solid #f0f0f0;
+        }
+        
+        .step.active {
+            border-color: #4a6fa5;
+            color: #4a6fa5;
+        }
+        
+        .step.completed {
+            border-color: #28a745;
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>Video Upload Test</h1>
+    
+    <div class="file-input-container" id="fileInputContainer">
+        <input type="file" id="videoFile" accept="video/mp4,video/quicktime,video/avi">
+        <p>Choose a video file or drag it here</p>
+        <p><small>Supports MP4, MOV, AVI formats</small></p>
+        <div class="file-status hidden" id="fileStatus">File selected successfully!</div>
+    </div>
+    
+    <div class="video-preview-container hidden" id="videoPreviewContainer">
+        <h3>Video Preview</h3>
+        <video id="videoPreview" controls></video>
+        <div class="video-info">
+            <p>Filename: <span id="videoFilename"></span></p>
+            <p>Size: <span id="videoSize"></span></p>
+            <p>Duration: <span id="videoDuration"></span></p>
+        </div>
+    </div>
+    
+    <button id="analyzeBtn" disabled>Analyze Video</button>
+    
+    <div class="progress-section hidden" id="progressSection">
+        <h3>Analysis Progress</h3>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-status" id="progressStatus">Processing video...</p>
+        
+        <div class="processing-steps">
+            <div class="step" data-step="upload" id="uploadStep">
+                <span>Uploading</span>
+            </div>
+            <div class="step" data-step="analyze" id="analyzeStep">
+                <span>Analyzing</span>
+            </div>
+            <div class="step" data-step="identify" id="identifyStep">
+                <span>Identifying Items</span>
+            </div>
+            <div class="step" data-step="value" id="valueStep">
+                <span>Estimating Values</span>
+            </div>
+            <div class="step" data-step="complete" id="completeStep">
+                <span>Complete</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="results-section hidden" id="resultsSection">
+        <h3>Analysis Results</h3>
+        <p>Analysis complete! <span id="itemCount">0</span> items detected.</p>
+        
+        <div class="inventory-table-container">
+            <table id="inventoryTable" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr style="background-color: #f0f0f0;">
+                        <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Item</th>
+                        <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Category</th>
+                        <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Brand</th>
+                        <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Condition</th>
+                        <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Value</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                    <!-- Items will be populated here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button id="exportBtn" style="background-color: #28a745; color: white; border: none; padding: 10px 20px; cursor: pointer;">
+                Export Inventory
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const elements = {
+            videoFileInput: document.getElementById('videoFile'),
+            videoPreview: document.getElementById('videoPreview'),
+            videoFilename: document.getElementById('videoFilename'),
+            videoDuration: document.getElementById('videoDuration'),
+            videoSize: document.getElementById('videoSize'),
+            videoPreviewContainer: document.getElementById('videoPreviewContainer'),
+            fileInputContainer: document.getElementById('fileInputContainer'),
+            fileStatus: document.getElementById('fileStatus'),
+            analyzeBtn: document.getElementById('analyzeBtn'),
+            progressSection: document.getElementById('progressSection'),
+            progressFill: document.getElementById('progressFill'),
+            progressStatus: document.getElementById('progressStatus'),
+            resultsSection: document.getElementById('resultsSection'),
+            itemCount: document.getElementById('itemCount'),
+            uploadStep: document.getElementById('uploadStep'),
+            analyzeStep: document.getElementById('analyzeStep'),
+            identifyStep: document.getElementById('identifyStep'),
+            valueStep: document.getElementById('valueStep'),
+            completeStep: document.getElementById('completeStep')
+        };
+        
+        // State
+        let videoFile = null;
+        
+        // Initialize
+        function init() {
+            console.log('Initializing application...');
+            attachEventListeners();
+        }
+        
+        // Attach event listeners
+        function attachEventListeners() {
+            console.log('Attaching event listeners...');
+            
+            // Video file input
+            elements.videoFileInput.addEventListener('change', handleVideoFileSelect);
+            
+            // Analyze button
+            elements.analyzeBtn.addEventListener('click', startVideoAnalysis);
+        }
+        
+        // Handle video file selection
+        function handleVideoFileSelect(event) {
+            console.log('handleVideoFileSelect called', event);
+            const files = event.target.files;
+            if (files.length === 0) return;
+            
+            videoFile = files[0];
+            console.log('Selected file:', videoFile);
+            
+            // Update UI for selected video
+            updateVideoPreview(videoFile);
+            
+            // Add visual feedback for file selection
+            elements.fileInputContainer.classList.add('file-selected');
+            elements.fileStatus.textContent = 'File selected successfully!';
+            elements.fileStatus.classList.remove('hidden');
+            
+            // Enable analyze button
+            elements.analyzeBtn.disabled = false;
+        }
+        
+        // Update video preview
+        function updateVideoPreview(file) {
+            console.log('Updating video preview for file:', file.name);
+            
+            // Create object URL for the video file
+            const videoURL = URL.createObjectURL(file);
+            
+            // Set video source and show preview
+            elements.videoPreview.src = videoURL;
+            elements.videoFilename.textContent = file.name;
+            elements.videoSize.textContent = formatFileSize(file.size);
+            
+            // Get video duration when metadata is loaded
+            elements.videoPreview.onloadedmetadata = () => {
+                elements.videoDuration.textContent = formatDuration(elements.videoPreview.duration);
+            };
+            
+            elements.videoPreviewContainer.classList.remove('hidden');
+        }
+        
+        // Format file size for display
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Format duration for display
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+        
+        // Start video analysis process
+        async function startVideoAnalysis() {
+            console.log('startVideoAnalysis called');
+            
+            if (!videoFile) {
+                console.error('No video file selected');
+                return;
+            }
+            
+            // Show progress section
+            elements.progressSection.classList.remove('hidden');
+            
+            // Reset progress indicators
+            updateProgressBar(0);
+            updateProgressStep('upload');
+            
+            try {
+                // Step 1: Upload video
+                updateProgressStatus(`Uploading video: ${videoFile.name}`);
+                await simulateProgress(10, 20); // Simulate upload progress
+                
+                // Step 2: Analyze video
+                updateProgressStep('analyze');
+                updateProgressStatus(`Analyzing video`);
+                await simulateProgress(20, 40); // Simulate analysis progress
+                
+                // Step 3: Identify items
+                updateProgressStep('identify');
+                updateProgressStatus(`Identifying items in video`);
+                const detectedItems = await simulateItemDetection();
+                await simulateProgress(40, 70); // Simulate identification progress
+                
+                // Step 4: Estimate values
+                updateProgressStep('value');
+                updateProgressStatus(`Estimating values for ${detectedItems.length} items`);
+                const valuedItems = await simulateValueEstimation(detectedItems);
+                await simulateProgress(70, 95); // Simulate valuation progress
+                
+                // Complete the process
+                updateProgressStep('complete');
+                updateProgressBar(100);
+                updateProgressStatus('Analysis complete!');
+                
+                // Update results
+                elements.itemCount.textContent = detectedItems.length;
+                
+                // Render inventory table
+                renderInventoryTable(valuedItems);
+                
+                // Show results section after a short delay
+                setTimeout(() => {
+                    elements.resultsSection.classList.remove('hidden');
+                }, 1000);
+                
+                // Add event listener to export button
+                document.getElementById('exportBtn').addEventListener('click', () => {
+                    exportInventory(valuedItems);
+                });
+                
+            } catch (error) {
+                console.error('Error processing video:', error);
+                updateProgressStatus(`Error processing video: ${error.message}`);
+            }
+        }
+        
+        // Simulate item detection
+        async function simulateItemDetection() {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Generate random items
+            const items = [];
+            const itemCount = 5 + Math.floor(Math.random() * 10); // 5-15 items
+            
+            const categories = ['Furniture', 'Electronics', 'Appliances', 'Decor', 'Kitchenware'];
+            const brands = {
+                'Furniture': ['IKEA', 'Ashley', 'West Elm', 'Pottery Barn', 'Wayfair'],
+                'Electronics': ['Samsung', 'LG', 'Sony', 'Apple', 'Dell'],
+                'Appliances': ['Whirlpool', 'GE', 'Samsung', 'LG', 'Bosch'],
+                'Decor': ['Target', 'IKEA', 'West Elm', 'Crate & Barrel', 'HomeGoods'],
+                'Kitchenware': ['KitchenAid', 'Cuisinart', 'OXO', 'Henckels', 'Wusthof']
+            };
+            const conditions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
+            const items_by_category = {
+                'Furniture': ['Sofa', 'Coffee Table', 'Dining Table', 'Bed Frame', 'Dresser', 'Bookshelf', 'TV Stand'],
+                'Electronics': ['TV', 'Laptop', 'Smartphone', 'Tablet', 'Speaker', 'Headphones', 'Monitor'],
+                'Appliances': ['Refrigerator', 'Microwave', 'Dishwasher', 'Washing Machine', 'Dryer', 'Toaster', 'Blender'],
+                'Decor': ['Rug', 'Lamp', 'Mirror', 'Artwork', 'Curtains', 'Throw Pillows', 'Vase'],
+                'Kitchenware': ['Knife Set', 'Cookware Set', 'Dinnerware Set', 'Glassware', 'Utensils', 'Cutting Board', 'Mixing Bowls']
+            };
+            
+            for (let i = 0; i < itemCount; i++) {
+                const category = categories[Math.floor(Math.random() * categories.length)];
+                const item_list = items_by_category[category];
+                const item_name = item_list[Math.floor(Math.random() * item_list.length)];
+                const brand_list = brands[category];
+                const brand = brand_list[Math.floor(Math.random() * brand_list.length)];
+                const condition = conditions[Math.floor(Math.random() * conditions.length)];
+                
+                items.push({
+                    name: item_name,
+                    category: category,
+                    brand: brand,
+                    condition: condition
+                });
+            }
+            
+            return items;
+        }
+        
+        // Simulate value estimation
+        async function simulateValueEstimation(items) {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Add value to each item
+            return items.map(item => {
+                // Base value by category
+                let baseValue;
+                switch (item.category) {
+                    case 'Furniture':
+                        baseValue = 200 + Math.random() * 800;
+                        break;
+                    case 'Electronics':
+                        baseValue = 300 + Math.random() * 1200;
+                        break;
+                    case 'Appliances':
+                        baseValue = 150 + Math.random() * 850;
+                        break;
+                    case 'Decor':
+                        baseValue = 50 + Math.random() * 250;
+                        break;
+                    case 'Kitchenware':
+                        baseValue = 100 + Math.random() * 400;
+                        break;
+                    default:
+                        baseValue = 100 + Math.random() * 500;
+                }
+                
+                // Adjust for condition
+                let conditionMultiplier;
+                switch (item.condition) {
+                    case 'New':
+                        conditionMultiplier = 1.0;
+                        break;
+                    case 'Like New':
+                        conditionMultiplier = 0.9;
+                        break;
+                    case 'Good':
+                        conditionMultiplier = 0.7;
+                        break;
+                    case 'Fair':
+                        conditionMultiplier = 0.5;
+                        break;
+                    case 'Poor':
+                        conditionMultiplier = 0.3;
+                        break;
+                    default:
+                        conditionMultiplier = 0.5;
+                }
+                
+                const value = Math.round(baseValue * conditionMultiplier);
+                
+                return {
+                    ...item,
+                    value: value
+                };
+            });
+        }
+        
+        // Render inventory table
+        function renderInventoryTable(items) {
+            const tableBody = document.getElementById('inventoryTableBody');
+            tableBody.innerHTML = '';
+            
+            items.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.name}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.category}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.brand}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">${item.condition}</td>
+                    <td style="padding: 10px; border-bottom: 1px solid #ddd;">$${item.value.toLocaleString()}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // Export inventory to CSV
+        function exportInventory(items) {
+            // Create CSV content
+            let csvContent = "Item,Category,Brand,Condition,Value\n";
+            
+            items.forEach(item => {
+                csvContent += `"${item.name}","${item.category}","${item.brand}","${item.condition}","$${item.value.toLocaleString()}"\n`;
+            });
+            
+            // Create download link
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'home_inventory.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // Update progress bar
+        function updateProgressBar(percent) {
+            elements.progressFill.style.width = `${percent}%`;
+        }
+        
+        // Update progress status text
+        function updateProgressStatus(message) {
+            elements.progressStatus.textContent = message;
+        }
+        
+        // Update active progress step
+        function updateProgressStep(stepId) {
+            const steps = {
+                'upload': elements.uploadStep,
+                'analyze': elements.analyzeStep,
+                'identify': elements.identifyStep,
+                'value': elements.valueStep,
+                'complete': elements.completeStep
+            };
+            
+            // Set active step
+            Object.keys(steps).forEach(key => {
+                const step = steps[key];
+                
+                if (key === stepId) {
+                    step.classList.add('active');
+                    step.classList.remove('completed');
+                } else if (
+                    (stepId === 'analyze' && key === 'upload') ||
+                    (stepId === 'identify' && ['upload', 'analyze'].includes(key)) ||
+                    (stepId === 'value' && ['upload', 'analyze', 'identify'].includes(key)) ||
+                    (stepId === 'complete' && ['upload', 'analyze', 'identify', 'value'].includes(key))
+                ) {
+                    step.classList.remove('active');
+                    step.classList.add('completed');
+                } else {
+                    step.classList.remove('active', 'completed');
+                }
+            });
+        }
+        
+        // Simulate progress over time
+        function simulateProgress(startPercent, endPercent) {
+            return new Promise(resolve => {
+                const duration = 1000 + Math.random() * 2000; // Random duration between 1-3 seconds
+                const startTime = Date.now();
+                
+                function updateProgress() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const currentPercent = startPercent + progress * (endPercent - startPercent);
+                    
+                    updateProgressBar(currentPercent);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(updateProgress);
+                    } else {
+                        resolve();
+                    }
+                }
+                
+                updateProgress();
+            });
+        }
+        
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);

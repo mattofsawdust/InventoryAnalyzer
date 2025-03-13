@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Home Inventory (Minimal)</title>
+    <style>
+        /* Basic styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        header h1 {
+            color: #4a6fa5;
+            margin-bottom: 10px;
+        }
+        
+        section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        /* Upload section styles */
+        .file-input-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .file-input-container.file-selected {
+            border-color: #28a745;
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+        
+        .file-input-container input[type="file"] {
+            display: none;
+        }
+        
+        .file-input-container label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .file-status {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #28a745;
+            text-align: center;
+        }
+        
+        .video-preview-container {
+            margin: 20px 0;
+        }
+        
+        .video-preview-container h3 {
+            margin-bottom: 15px;
+            color: #4a6fa5;
+        }
+        
+        #videoPreview {
+            width: 100%;
+            max-height: 400px;
+            border-radius: 8px;
+            background-color: #000;
+            margin-bottom: 15px;
+        }
+        
+        .video-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .video-info p {
+            color: #6c757d;
+        }
+        
+        .primary-btn {
+            background-color: #4a6fa5;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .primary-btn:hover {
+            background-color: #3a5a8c;
+        }
+        
+        .primary-btn:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AI Home Inventory (Minimal)</h1>
+        <p>Automatically catalog your home contents using video footage</p>
+    </header>
+    
+    <main>
+        <section class="upload-section">
+            <h2>Upload Video</h2>
+            <div class="upload-container">
+                <div class="file-input-container" id="fileInputContainer">
+                    <input type="file" id="videoFile" accept="video/mp4,video/quicktime,video/avi" multiple>
+                    <label for="videoFile">
+                        <span>Choose video files or drag them here</span>
+                        <small>Supports MP4, MOV, AVI formats</small>
+                    </label>
+                    <div class="file-status hidden" id="fileStatus">File selected successfully!</div>
+                </div>
+                <div class="room-selection">
+                    <label for="roomSelect">Room:</label>
+                    <select id="roomSelect">
+                        <option value="living-room">Living Room</option>
+                        <option value="kitchen">Kitchen</option>
+                        <option value="bedroom">Bedroom</option>
+                        <option value="bathroom">Bathroom</option>
+                        <option value="office">Home Office</option>
+                        <option value="garage">Garage</option>
+                        <option value="other">Other</option>
+                    </select>
+                    <input type="text" id="customRoom" placeholder="Custom room name" class="hidden">
+                </div>
+            </div>
+            <div class="video-preview-container hidden" id="videoPreviewContainer">
+                <h3>Video Preview</h3>
+                <video id="videoPreview" controls></video>
+                <div class="video-info">
+                    <p>Filename: <span id="videoFilename"></span></p>
+                    <p>Duration: <span id="videoDuration"></span></p>
+                    <p>Size: <span id="videoSize"></span></p>
+                </div>
+            </div>
+            <button id="analyzeBtn" class="primary-btn" disabled>
+                Analyze Video
+            </button>
+        </section>
+    </main>
+    
+    <script src="app-minimal.js"></script>
+</body>
+</html>

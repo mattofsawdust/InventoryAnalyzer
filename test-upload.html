@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test File Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .file-input-container {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .file-input-container.file-selected {
+            border-color: #28a745;
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+        .file-status {
+            margin-top: 10px;
+            color: #28a745;
+        }
+        .hidden {
+            display: none;
+        }
+        .video-preview {
+            margin-top: 20px;
+        }
+        video {
+            max-width: 100%;
+            max-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test File Upload</h1>
+    <p>This page tests the file upload functionality for .mov files.</p>
+    
+    <div class="file-input-container" id="fileInputContainer">
+        <input type="file" id="videoFile" accept="video/mp4,video/quicktime,video/avi">
+        <label for="videoFile">Choose a video file (.mp4, .mov, .avi)</label>
+        <div class="file-status hidden" id="fileStatus">File selected successfully!</div>
+    </div>
+    
+    <div class="video-preview hidden" id="videoPreviewContainer">
+        <h3>Video Preview</h3>
+        <video id="videoPreview" controls></video>
+        <div class="video-info">
+            <p>Filename: <span id="videoFilename"></span></p>
+            <p>Size: <span id="videoSize"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        // Log when the script loads
+        console.log('Test upload script loaded');
+        
+        // DOM Elements
+        const elements = {
+            videoFileInput: document.getElementById('videoFile'),
+            fileInputContainer: document.getElementById('fileInputContainer'),
+            fileStatus: document.getElementById('fileStatus'),
+            videoPreview: document.getElementById('videoPreview'),
+            videoFilename: document.getElementById('videoFilename'),
+            videoSize: document.getElementById('videoSize'),
+            videoPreviewContainer: document.getElementById('videoPreviewContainer')
+        };
+        
+        // Handle file selection
+        function handleVideoFileSelect(event) {
+            console.log('File selected event:', event);
+            
+            const files = event.target.files;
+            if (files.length === 0) return;
+            
+            const file = files[0];
+            console.log('Selected file:', file);
+            
+            // Show file status
+            elements.fileInputContainer.classList.add('file-selected');
+            elements.fileStatus.textContent = 'File selected: ' + file.name;
+            elements.fileStatus.classList.remove('hidden');
+            
+            // Update video preview
+            const videoURL = URL.createObjectURL(file);
+            elements.videoPreview.src = videoURL;
+            elements.videoFilename.textContent = file.name;
+            elements.videoSize.textContent = formatFileSize(file.size);
+            elements.videoPreviewContainer.classList.remove('hidden');
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Add event listener
+        elements.videoFileInput.addEventListener('change', handleVideoFileSelect);
+        
+        // Log that initialization is complete
+        console.log('Test upload initialization complete');
+    </script>
+</body>
+</html>
